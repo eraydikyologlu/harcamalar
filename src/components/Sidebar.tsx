@@ -11,7 +11,9 @@ interface SidebarProps {
   getMonthlyStats: (month: string) => {
     totalIncome: number;
     totalExpenses: number;
+    remainingDebt: number;
     balance: number;
+    spendingRatio: number;
     transactionCount: number;
   };
 }
@@ -46,7 +48,6 @@ export const Sidebar = ({
             onClick={() => onPageChange('dashboard')}
             className={`sidebar-item w-full ${currentPage === 'dashboard' ? 'active' : ''}`}
           >
-            <BarChart3 className="w-5 h-5" />
             <span className="font-medium">📊 Ana Sayfa</span>
           </button>
           
@@ -54,7 +55,6 @@ export const Sidebar = ({
             onClick={() => onPageChange('analytics')}
             className={`sidebar-item w-full ${currentPage === 'analytics' ? 'active' : ''}`}
           >
-            <PieChart className="w-5 h-5" />
             <span className="font-medium">📈 Analitik</span>
           </button>
         </nav>
@@ -110,6 +110,12 @@ export const Sidebar = ({
                       <span className="text-destructive">Gider:</span>
                       <span className="font-medium">
                         {formatCurrency(stats.totalExpenses)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-600">Kalan Borç:</span>
+                      <span className="font-medium text-purple-600">
+                        {formatCurrency(stats.remainingDebt)}
                       </span>
                     </div>
                     <hr className={`my-2 ${isActive ? 'border-primary-foreground/20' : 'border-border'}`} />

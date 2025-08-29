@@ -198,14 +198,14 @@ export const Dashboard = ({
           </div>
         </div>
 
-        <div className="budget-card-warning animate-fade-in">
+        <div className="budget-card animate-fade-in bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-500/10 rounded-lg">
+            <div className="p-3 bg-purple-500/10 rounded-lg">
               <span className="text-2xl">💳</span>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Kalan Borç</p>
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-2xl font-bold text-purple-600">
                 {formatCurrency(monthlyStats.remainingDebt)}
               </p>
             </div>
