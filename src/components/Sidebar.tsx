@@ -8,6 +8,8 @@ interface SidebarProps {
   selectedMonth: string;
   onMonthSelect: (month: string) => void;
   monthlyTransactions: MonthlyData;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
   getMonthlyStats: (month: string) => {
     totalIncome: number;
     totalExpenses: number;
@@ -24,13 +26,19 @@ export const Sidebar = ({
   selectedMonth,
   onMonthSelect,
   monthlyTransactions,
+  isSidebarOpen,
+  onToggleSidebar,
   getMonthlyStats
 }: SidebarProps) => {
   const allMonths = Object.keys(monthlyTransactions)
     .sort((a, b) => b.localeCompare(a)); // En yeni en üstte
 
   return (
-    <div className="w-80 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className={`
+      fixed lg:static inset-y-0 left-0 z-50 w-80 bg-sidebar border-r border-sidebar-border flex flex-col
+      transform transition-transform duration-300 ease-in-out lg:transform-none
+      ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+    `}>
       {/* Header */}
       <div className="p-6 border-b border-sidebar-border">
         <h1 className="text-2xl font-bold text-gradient-primary">
@@ -45,14 +53,20 @@ export const Sidebar = ({
       <div className="p-4 border-b border-sidebar-border">
         <nav className="space-y-2">
           <button
-            onClick={() => onPageChange('dashboard')}
+            onClick={() => {
+              onPageChange('dashboard');
+              if (window.innerWidth < 1024) onToggleSidebar();
+            }}
             className={`sidebar-item w-full ${currentPage === 'dashboard' ? 'active' : ''}`}
           >
             <span className="font-medium">📊 Ana Sayfa</span>
           </button>
           
           <button
-            onClick={() => onPageChange('analytics')}
+            onClick={() => {
+              onPageChange('analytics');
+              if (window.innerWidth < 1024) onToggleSidebar();
+            }}
             className={`sidebar-item w-full ${currentPage === 'analytics' ? 'active' : ''}`}
           >
             <span className="font-medium">📈 Analitik</span>
@@ -83,7 +97,10 @@ export const Sidebar = ({
               return (
                 <button
                   key={month}
-                  onClick={() => onMonthSelect(month)}
+                  onClick={() => {
+                    onMonthSelect(month);
+                    if (window.innerWidth < 1024) onToggleSidebar();
+                  }}
                   className={`w-full p-4 rounded-lg border text-left transition-all duration-200 hover:shadow-lg ${
                     isActive 
                       ? 'bg-primary text-primary-foreground border-primary shadow-lg border-l-4' 

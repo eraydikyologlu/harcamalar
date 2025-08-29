@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, TrendingUp, TrendingDown, Wallet, Filter, ArrowUpDown } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, TrendingDown, Wallet, Filter, ArrowUpDown, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Transaction } from './BudgetTracker';
@@ -15,6 +15,7 @@ interface DashboardProps {
   onRecategorizeAll: () => void;
   onUpdatePaymentStatus: (id: string, isPaid: boolean) => void;
   onMarkAllAsPending: () => void;
+  onToggleSidebar?: () => void;
   monthlyStats: {
     totalIncome: number;
     totalExpenses: number;
@@ -33,6 +34,7 @@ export const Dashboard = ({
   onRecategorizeAll,
   onUpdatePaymentStatus,
   onMarkAllAsPending,
+  onToggleSidebar,
   monthlyStats
 }: DashboardProps) => {
   const [newTransaction, setNewTransaction] = useState({
@@ -148,14 +150,26 @@ export const Dashboard = ({
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 lg:p-8 max-w-6xl mx-auto">
+      {/* Mobile Header */}
+      <div className="lg:hidden mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleSidebar}
+          className="p-2"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+      </div>
+      
       {/* Header */}
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
             {getMonthName(selectedMonth)} Bütçesi
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm lg:text-base">
             Seçili ay için gelir ve gider takibi
           </p>
         </div>

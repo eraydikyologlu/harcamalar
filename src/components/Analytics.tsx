@@ -13,7 +13,8 @@ import {
   Filler
 } from 'chart.js';
 import { Bar, Line, Pie } from 'react-chartjs-2';
-import { TrendingUp, TrendingDown, Wallet, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Calendar, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { MonthlyData } from './BudgetTracker';
 import { formatCurrency, getMonthName } from '../utils/formatters';
 import { getCategoryColor, getCategoryIcon } from '../utils/categories';
@@ -35,6 +36,7 @@ ChartJS.register(
 interface AnalyticsProps {
   monthlyTransactions: MonthlyData;
   allMonths: string[];
+  onToggleSidebar?: () => void;
   getMonthlyStats: (month: string) => {
     totalIncome: number;
     totalExpenses: number;
@@ -46,6 +48,7 @@ interface AnalyticsProps {
 export const Analytics = ({
   monthlyTransactions,
   allMonths,
+  onToggleSidebar,
   getMonthlyStats
 }: AnalyticsProps) => {
   // Genel istatistikler
@@ -192,7 +195,19 @@ export const Analytics = ({
 
   if (allMonths.length === 0) {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-4 lg:p-8 max-w-6xl mx-auto">
+        {/* Mobile Header */}
+        <div className="lg:hidden mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSidebar}
+            className="p-2"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
+        
         <div className="text-center py-20">
           <Wallet className="w-16 h-16 mx-auto mb-6 text-muted-foreground opacity-50" />
           <h2 className="text-2xl font-bold mb-4">Henüz Analiz Verisi Yok</h2>
@@ -205,13 +220,25 @@ export const Analytics = ({
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+      {/* Mobile Header */}
+      <div className="lg:hidden mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleSidebar}
+          className="p-2"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+      </div>
+      
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
           📈 Finansal Analitik
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm lg:text-base">
           Tüm aylardaki gelir, gider ve kategori analizleriniz
         </p>
       </div>
