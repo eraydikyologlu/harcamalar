@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Plus, Trash2, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Trash2, TrendingUp, TrendingDown, Wallet, Filter, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Transaction } from './BudgetTracker';
 import { formatCurrency, getMonthName, formatDate } from '../utils/formatters';
-import { categorizeTransaction } from '../utils/categories';
+import { categorizeTransaction, getAllCategories, getCategoryIcon } from '../utils/categories';
 import { toast } from '@/hooks/use-toast';
 
 interface DashboardProps {
@@ -12,10 +12,15 @@ interface DashboardProps {
   transactions: Transaction[];
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   onDeleteTransaction: (id: string) => void;
+  onRecategorizeAll: () => void;
+  onUpdatePaymentStatus: (id: string, isPaid: boolean) => void;
+  onMarkAllAsPending: () => void;
   monthlyStats: {
     totalIncome: number;
     totalExpenses: number;
+    remainingDebt: number;
     balance: number;
+    spendingRatio: number;
     transactionCount: number;
   };
 }
@@ -25,6 +30,9 @@ export const Dashboard = ({
   transactions,
   onAddTransaction,
   onDeleteTransaction,
+  onRecategorizeAll,
+  onUpdatePaymentStatus,
+  onMarkAllAsPending,
   monthlyStats
 }: DashboardProps) => {
   const [newTransaction, setNewTransaction] = useState({
@@ -32,6 +40,48 @@ export const Dashboard = ({
     amount: '',
     description: ''
   });
+
+  // Filtreleme ve sıralama state'leri
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Filtrelenmiş ve sıralanmış işlemler
+  const filteredAndSortedTransactions = useMemo(() => {
+    let filtered = transactions;
+
+    // Kategori filtresi
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(t => t.category === selectedCategory);
+    }
+
+    // Tip filtresi (gelir/gider)
+    if (selectedType !== 'all') {
+      filtered = filtered.filter(t => t.type === selectedType);
+    }
+
+    // Sıralama
+    const sorted = [...filtered].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'description':
+          comparison = a.description.localeCompare(b.description, 'tr');
+          break;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [transactions, selectedCategory, selectedType, sortBy, sortOrder]);
 
   const handleAddTransaction = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +110,8 @@ export const Dashboard = ({
       amount,
       description: newTransaction.description.trim(),
       date: new Date().toISOString(),
-      category: categorizeTransaction(newTransaction.description)
+      category: categorizeTransaction(newTransaction.description),
+      isPaid: false // Yeni işlemler default olarak ödenecek
     };
 
     onAddTransaction(transaction);
@@ -80,20 +131,45 @@ export const Dashboard = ({
     });
   };
 
+  const handleRecategorizeAll = () => {
+    onRecategorizeAll();
+    toast({
+      title: "Başarılı",
+      description: "Tüm işlemler yeniden sınıflandırıldı!"
+    });
+  };
+
+  const handleMarkAllAsPending = () => {
+    onMarkAllAsPending();
+    toast({
+      title: "Başarılı",
+      description: "Tüm giderler ödenecek durumuna getirildi!"
+    });
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          {getMonthName(selectedMonth)} Bütçesi
-        </h1>
-        <p className="text-muted-foreground">
-          Seçili ay için gelir ve gider takibi
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            {getMonthName(selectedMonth)} Bütçesi
+          </h1>
+          <p className="text-muted-foreground">
+            Seçili ay için gelir ve gider takibi
+          </p>
+        </div>
+        <Button 
+          onClick={handleRecategorizeAll}
+          variant="outline"
+          className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+        >
+          🔄 Kategorileri Güncelle
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="budget-card-success animate-fade-in">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-success/10 rounded-lg">
@@ -117,6 +193,20 @@ export const Dashboard = ({
               <p className="text-sm text-muted-foreground">Toplam Gider</p>
               <p className="text-2xl font-bold text-destructive">
                 {formatCurrency(monthlyStats.totalExpenses)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="budget-card-warning animate-fade-in">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-orange-500/10 rounded-lg">
+              <span className="text-2xl">💳</span>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Kalan Borç</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {formatCurrency(monthlyStats.remainingDebt)}
               </p>
             </div>
           </div>
@@ -191,25 +281,125 @@ export const Dashboard = ({
         </form>
       </div>
 
+      {/* Filter and Sort Controls */}
+      <div className="budget-card mb-6 animate-bounce-in">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Filter className="w-5 h-5" />
+          Filtreleme ve Sıralama
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Kategori Filtresi */}
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Kategori
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              <option value="all">🌟 Tümü</option>
+              {getAllCategories().map(category => (
+                <option key={category} value={category}>
+                  {getCategoryIcon(category)} {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tip Filtresi */}
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              İşlem Tipi
+            </label>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              <option value="all">💫 Tümü</option>
+              <option value="income">💰 Gelir</option>
+              <option value="expense">💸 Gider</option>
+            </select>
+          </div>
+
+          {/* Sıralama Kriteri */}
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Sıralama
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'description')}
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              <option value="date">📅 Tarih</option>
+              <option value="amount">💳 Tutar</option>
+              <option value="description">📝 Açıklama</option>
+            </select>
+          </div>
+
+          {/* Sıralama Yönü */}
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Sıralama Yönü
+            </label>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg focus:ring-2 focus:ring-primary text-foreground text-sm hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              {sortOrder === 'asc' ? '⬆️ Artan' : '⬇️ Azalan'}
+            </button>
+          </div>
+        </div>
+
+        {/* Filtre Özet */}
+        <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+          <span>
+            📊 Gösterilen: <strong>{filteredAndSortedTransactions.length}</strong> / {transactions.length} işlem
+          </span>
+          {(selectedCategory !== 'all' || selectedType !== 'all') && (
+            <button
+              onClick={() => {
+                setSelectedCategory('all');
+                setSelectedType('all');
+              }}
+              className="text-primary hover:underline"
+            >
+              🔄 Filtreleri Temizle
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Transactions List */}
       <div className="budget-card animate-slide-in">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">
-            İşlem Geçmişi ({monthlyStats.transactionCount})
+            İşlem Geçmişi ({filteredAndSortedTransactions.length}{filteredAndSortedTransactions.length !== transactions.length ? ` / ${transactions.length}` : ''})
           </h2>
         </div>
 
-        {transactions.length === 0 ? (
+        {filteredAndSortedTransactions.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Wallet className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg mb-2">Henüz işlem yok</p>
-            <p>Bu ay için ilk işleminizi ekleyin</p>
+            {transactions.length === 0 ? (
+              <>
+                <p className="text-lg mb-2">Henüz işlem yok</p>
+                <p>Bu ay için ilk işleminizi ekleyin</p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg mb-2">Filtre kriterlerinize uygun işlem bulunamadı</p>
+                <p>Filtreleri değiştirmeyi deneyin</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
-            {transactions
-              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-              .map((transaction) => (
+            {filteredAndSortedTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors"
@@ -248,6 +438,22 @@ export const Dashboard = ({
                       {transaction.type === 'income' ? '+' : '-'}
                       {formatCurrency(transaction.amount)}
                     </span>
+
+                    {/* Payment Status Toggle - Sadece giderler için */}
+                    {transaction.type === 'expense' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onUpdatePaymentStatus(transaction.id, !transaction.isPaid)}
+                        className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                          transaction.isPaid === false
+                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        {transaction.isPaid === false ? '💳 Ödenecek' : '✅ Ödendi'}
+                      </Button>
+                    )}
                     
                     <Button
                       variant="ghost"

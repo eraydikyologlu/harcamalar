@@ -11,6 +11,7 @@ export interface Transaction {
   description: string;
   date: string;
   category?: string;
+  isPaid?: boolean;
 }
 
 export interface MonthlyData {
@@ -31,7 +32,10 @@ export const BudgetTracker = () => {
     deleteTransaction,
     getAllMonths,
     getMonthData,
-    getMonthlyStats
+    getMonthlyStats,
+    recategorizeAllTransactions,
+    updatePaymentStatus,
+    markAllAsPending
   } = useBudgetData();
 
   return (
@@ -53,6 +57,9 @@ export const BudgetTracker = () => {
             onAddTransaction={addTransaction}
             onDeleteTransaction={deleteTransaction}
             monthlyStats={getMonthlyStats(selectedMonth)}
+            onRecategorizeAll={recategorizeAllTransactions}
+            onUpdatePaymentStatus={updatePaymentStatus}
+            onMarkAllAsPending={markAllAsPending}
           />
         ) : (
           <Analytics
